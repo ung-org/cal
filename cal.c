@@ -30,14 +30,10 @@
 #include <time.h>
 #include <unistd.h>
 
-#define MONTHWIDTH (20)
-#define MONTHHEIGHT (8)
-#define COLUMNS (3)
-#define COLUMNSEP "  "
-
-/*d print a calendar d*/
-/*a month a*/
-/*a year a*/
+#define MONTHWIDTH	(20)		/* 7 two-digit days + spacing */
+#define MONTHHEIGHT	(8)		/* labels + max 6 weeks */
+#define COLUMNS		(3)		/* arbitrary, but looks decent */
+#define COLUMNSEP	"  "		/* arbitrary, but looks decent */
 
 /* FIXME: Sep 1752 cuts off after the 27th */
 
@@ -47,8 +43,8 @@ static int daysin(int year, int month)
 {
 	int mdays[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 	if (month == 1 && ((year % 4 == 0 && year % 400 == 0)
-	    || (year % 4 == 0 && year % 100 != 0))) {
-	    return 29;
+		|| (year % 4 == 0 && year % 100 != 0))) {
+			return 29;
 	}
 	return mdays[month];
 }
@@ -120,15 +116,18 @@ static int cal_week(char *buf, int year, int month, int week)
 
 void genmonth(struct tm *tm, int withyear)
 {
-	strftime(displaymonth[tm->tm_mon % COLUMNS][0], MONTHWIDTH, withyear ? "%B %Y" : "%B", tm);
+	strftime(displaymonth[tm->tm_mon % COLUMNS][0], MONTHWIDTH,
+		withyear ? "%B %Y" : "%B", tm);
 	center(displaymonth[tm->tm_mon % COLUMNS][0], MONTHWIDTH);
 
 	char *header = "Su Mo Tu We Th Fr Sa";
 	strcpy(displaymonth[tm->tm_mon % COLUMNS][1], header);
 
 	for (int i = 0; i < MONTHHEIGHT-2; i++) {
-		memset(displaymonth[tm->tm_mon % COLUMNS][i+2], ' ', MONTHWIDTH);
-		cal_week(displaymonth[tm->tm_mon % COLUMNS][i+2], tm->tm_year + 1900, tm->tm_mon + 1, i);
+		memset(displaymonth[tm->tm_mon % COLUMNS][i+2], ' ',
+			MONTHWIDTH);
+		cal_week(displaymonth[tm->tm_mon % COLUMNS][i+2],
+			tm->tm_year + 1900, tm->tm_mon + 1, i);
 		displaymonth[tm->tm_mon % COLUMNS][i+2][strlen(displaymonth[tm->tm_mon % COLUMNS][i+2])] = ' ';
 		displaymonth[tm->tm_mon % COLUMNS][i+2][MONTHWIDTH] = '\0';
 	}
@@ -136,6 +135,8 @@ void genmonth(struct tm *tm, int withyear)
 
 int main(int argc, char *argv[])
 {
+	setlocale(LC_ALL, "");
+
 	while (getopt(argc, argv, "") != -1) {
 		return 1;
 	}
@@ -145,21 +146,24 @@ int main(int argc, char *argv[])
 	tm->tm_mday = 1;
 
 	if (argc > optind + 2) {
+		fprintf(stderr, "cal: too many operands\n");
 		return 1;
 	}
 
 	if (argc > optind) {
-		tm->tm_year = atoi(argv[argc-1]) - 1900;
+		char *year = argv[argc - 1];
+		tm->tm_year = atoi(year) - 1900;
 		if (tm->tm_year > 9999-1900 || tm->tm_year < 1-1900) {
+			fprintf(stderr, "cal: invalid year %s\n", year);
 			return 1;
 		}
 	}
 
-	setlocale(LC_ALL, "");
-
 	if (argc > optind + 1) {
-		tm->tm_mon = atoi(argv[optind]) - 1;
+		char *month = argv[optind];
+		tm->tm_mon = atoi(month) - 1;
 		if (tm->tm_mon > 11 || tm->tm_mon < 0) {
+			fprintf(stderr, "cal: invalid month %s\n", month);
 			return 1;
 		}
 	}
@@ -184,7 +188,8 @@ int main(int argc, char *argv[])
 					genmonth(tm, 0);
 					tm->tm_mon++;
 				}
-				printf("%s%s", displaymonth[col][row], col == 2 ? "\n" : COLUMNSEP);
+				printf("%s%s", displaymonth[col][row],
+					col == 2 ? "\n" : COLUMNSEP);
 			}
 		}
 	}
